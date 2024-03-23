@@ -8,7 +8,32 @@ const prisma = new PrismaClient();
 
 export const getLoans = async (req: Request, res: Response) => {
   try {
-    const loans = await prisma.loan.findMany();
+    const loans = await prisma.loan.findMany({
+      select: {
+        id: true,
+        start_date: true,
+        due_date: true,
+        return_date: true,
+        member: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        book: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        loan_status: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
     res.json({ message: "successfully get list of loans", data: loans });
   } catch (error) {
     const err = error as Error;
@@ -22,10 +47,37 @@ export const getLoan = async (req: Request, res: Response) => {
       where: {
         id: req.params.id,
       },
-      include: {
-        book: true,
-        member: true,
-        loan_status: true,
+      select: {
+        id: true,
+        start_date: true,
+        due_date: true,
+        return_date: true,
+        member: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        book: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        loan_status: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        late_charge: {
+          select: {
+            id: true,
+            total_delay: true,
+            charge: true,
+            is_paid: true,
+          },
+        },
       },
     });
     res.json({
@@ -50,10 +102,29 @@ export const createLoan = async (req: Request, res: Response) => {
         status_id: "65fd4cccbb5355c26b8d7e4d",
         due_date,
       },
-      include: {
-        book: true,
-        member: true,
-        loan_status: true,
+      select: {
+        id: true,
+        start_date: true,
+        due_date: true,
+        return_date: true,
+        member: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        book: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        loan_status: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     res.json({
@@ -97,11 +168,37 @@ export const updateLoan = async (req: Request, res: Response) => {
         status_id,
         ...reqUpdate,
       },
-      include: {
-        book: true,
-        member: true,
-        loan_status: true,
-        late_charge: true,
+      select: {
+        id: true,
+        start_date: true,
+        due_date: true,
+        return_date: true,
+        member: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        book: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        loan_status: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        late_charge: {
+          select: {
+            id: true,
+            total_delay: true,
+            charge: true,
+            is_paid: true,
+          },
+        },
       },
     });
     res.json({
@@ -123,7 +220,7 @@ export const deleteLoan = async (req: Request, res: Response) => {
     });
     res.json({
       message: "successfully delete loan with id : " + req.params.id,
-      data: loan,
+      data: null,
     });
   } catch (error) {
     const err = error as Error;
