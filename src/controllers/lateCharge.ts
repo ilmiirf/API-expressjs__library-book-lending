@@ -5,7 +5,24 @@ const prisma = new PrismaClient();
 
 export const getLateCharges = async (req: Request, res: Response) => {
   try {
-    const lateCharges = await prisma.late_charge.findMany();
+    const lateCharges = await prisma.late_charge.findMany({
+      select: {
+        id: true,
+        total_delay: true,
+        charge: true,
+        is_paid: true,
+        loan: {
+          select: {
+            id: true,
+            member: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
     res.json({ message: "successfully get late charges", data: lateCharges });
   } catch (error) {
     const err = error as Error;
@@ -18,6 +35,25 @@ export const getLateCharge = async (req: Request, res: Response) => {
     const lateCharge = await prisma.late_charge.findUnique({
       where: {
         id: req.params.id,
+      },
+      include: {
+        loan: {
+          select: {
+            id: true,
+            due_date: true,
+            return_date: true,
+            member: {
+              select: {
+                name: true,
+              },
+            },
+            book: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
       },
     });
     res.json({
@@ -76,7 +112,7 @@ export const deleteLateCharge = async (req: Request, res: Response) => {
     });
     res.json({
       message: "successfully delete late charge with id " + req.params.id,
-      data: lateCharge,
+      data: null,
     });
   } catch (error) {
     const err = error as Error;
