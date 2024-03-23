@@ -5,7 +5,12 @@ const prisma = new PrismaClient();
 
 export const getGenres = async (req: Request, res: Response) => {
   try {
-    const genres = await prisma.genre.findMany();
+    const genres = await prisma.genre.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
     res.json({ message: "successfully get list of genre", data: genres });
   } catch (error) {
     const err = error as Error;
@@ -20,7 +25,12 @@ export const getGenre = async (req: Request, res: Response) => {
         id: req.params.id,
       },
       include: {
-        books: true,
+        books: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
       },
     });
     res.json({
