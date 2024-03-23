@@ -16,7 +16,14 @@ export const getBooks = async (req: Request, res: Response) => {
           },
         },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        publication_year: true,
+        cover_image: true,
+        bookshelf_number: true,
+        total_book: true,
+        available: true,
         author: {
           select: {
             id: true,
@@ -55,6 +62,12 @@ export const getBook = async (req: Request, res: Response) => {
           select: {
             id: true,
             name: true,
+          },
+        },
+        loans: {
+          select: {
+            id: true,
+            status_id: true,
           },
         },
       },
@@ -140,6 +153,7 @@ export const updateBook = async (req: Request, res: Response) => {
           },
         },
         genres: {
+          deleteMany: {},
           connectOrCreate:
             genre_list &&
             genre_list.map((genre: any) => ({
@@ -150,7 +164,6 @@ export const updateBook = async (req: Request, res: Response) => {
                 name: genre,
               },
             })),
-          update: genre_list.map((genre: any) => ({})),
         },
         ...reqBook,
         updatedAt: new Date(),
@@ -189,7 +202,7 @@ export const deleteBook = async (req: Request, res: Response) => {
     });
     res.json({
       message: "successfully delete book with id : " + req.params.id,
-      data: book,
+      data: null,
     });
   } catch (error) {
     const err = error as Error;
