@@ -5,7 +5,20 @@ const prisma = new PrismaClient();
 
 export const getMembers = async (req: Request, res: Response) => {
   try {
-    const members = await prisma.member.findMany();
+    const members = await prisma.member.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+    });
     res.json({ message: "successfully get list of member", data: members });
   } catch (error) {
     const err = error as Error;
@@ -20,8 +33,25 @@ export const getMember = async (req: Request, res: Response) => {
         id: req.params.id,
       },
       include: {
-        user: true,
-        loan: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        loans: {
+          select: {
+            id: true,
+            start_date: true,
+            due_date: true,
+            return_date: true,
+            loan_status: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
     res.json({
@@ -97,6 +127,10 @@ export const deleteMember = async (req: Request, res: Response) => {
     const member = await prisma.member.delete({
       where: {
         id: req.params.id,
+      },
+      include: {
+        loans: true,
+        user: true,
       },
     });
     res.json({
