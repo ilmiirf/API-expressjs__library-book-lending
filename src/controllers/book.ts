@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { UserRequest } from "../types/UserTypes";
 
 const prisma = new PrismaClient();
 
@@ -46,6 +47,7 @@ export const getBooks = async (req: Request, res: Response) => {
 };
 
 export const getBook = async (req: Request, res: Response) => {
+  const request = req as UserRequest;
   try {
     const book = await prisma.book.findUnique({
       where: {
@@ -83,80 +85,24 @@ export const getBook = async (req: Request, res: Response) => {
 };
 
 export const createBook = async (req: Request, res: Response) => {
-  try {
-    const { author_name, genre_list, ...reqBook } = req.body;
-    const book = await prisma.book.create({
-      data: {
-        author: {
-          connectOrCreate: {
-            where: {
-              name: author_name,
-            },
-            create: {
-              name: author_name,
-            },
-          },
-        },
-        genres: {
-          connectOrCreate: genre_list.map((genre: any) => ({
-            where: {
-              name: genre,
-            },
-            create: {
-              name: genre,
-            },
-          })),
-        },
-        ...reqBook,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        genres: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-    res.json({
-      message: "successfully create book with id " + book.id,
-      data: book,
-    });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ message: err.message, req: req.body });
-  }
-};
-
-export const updateBook = async (req: Request, res: Response) => {
-  try {
-    const { author_name, genre_list, ...reqBook } = req.body;
-    const book = await prisma.book.update({
-      where: {
-        id: req.params.id,
-      },
-      data: {
-        author: author_name && {
-          connectOrCreate: {
-            where: {
-              name: author_name,
-            },
-            create: {
-              name: author_name,
+  const request = req as UserRequest;
+  if (request.user.role === "admin") {
+    try {
+      const { author_name, genre_list, ...reqBook } = req.body;
+      const book = await prisma.book.create({
+        data: {
+          author: {
+            connectOrCreate: {
+              where: {
+                name: author_name,
+              },
+              create: {
+                name: author_name,
+              },
             },
           },
-        },
-        genres: {
-          deleteMany: {},
-          connectOrCreate:
-            genre_list &&
-            genre_list.map((genre: any) => ({
+          genres: {
+            connectOrCreate: genre_list.map((genre: any) => ({
               where: {
                 name: genre,
               },
@@ -164,48 +110,119 @@ export const updateBook = async (req: Request, res: Response) => {
                 name: genre,
               },
             })),
+          },
+          ...reqBook,
         },
-        ...reqBook,
-        updatedAt: new Date(),
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          genres: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-        genres: {
-          select: {
-            id: true,
-            name: true,
+      });
+      res.json({
+        message: "successfully create book with id " + book.id,
+        data: book,
+      });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ message: err.message, req: req.body });
+    }
+  } else {
+    return res.status(401).json({ message: "You are not authorized" });
+  }
+};
+
+export const updateBook = async (req: Request, res: Response) => {
+  const request = req as UserRequest;
+  if (request.user.role === "admin") {
+    try {
+      const { author_name, genre_list, ...reqBook } = req.body;
+      const book = await prisma.book.update({
+        where: {
+          id: req.params.id,
+        },
+        data: {
+          author: author_name && {
+            connectOrCreate: {
+              where: {
+                name: author_name,
+              },
+              create: {
+                name: author_name,
+              },
+            },
+          },
+          genres: {
+            deleteMany: {},
+            connectOrCreate:
+              genre_list &&
+              genre_list.map((genre: any) => ({
+                where: {
+                  name: genre,
+                },
+                create: {
+                  name: genre,
+                },
+              })),
+          },
+          ...reqBook,
+          updatedAt: new Date(),
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          genres: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    });
-    res.json({
-      message: "successfully update book with id : " + req.params.id,
-      data: book,
-    });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ message: err.message });
+      });
+      res.json({
+        message: "successfully update book with id : " + req.params.id,
+        data: book,
+      });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ message: err.message });
+    }
+  } else {
+    return res.status(401).json({ message: "You are not authorized" });
   }
 };
 
 export const deleteBook = async (req: Request, res: Response) => {
-  try {
-    const book = await prisma.book.delete({
-      where: {
-        id: req.params.id,
-      },
-    });
-    res.json({
-      message: "successfully delete book with id : " + req.params.id,
-      data: null,
-    });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ message: err.message });
+  const request = req as UserRequest;
+  if (request.user.role === "admin") {
+    try {
+      const book = await prisma.book.delete({
+        where: {
+          id: req.params.id,
+        },
+      });
+      res.json({
+        message: "successfully delete book with id : " + req.params.id,
+        data: null,
+      });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ message: err.message });
+    }
+  } else {
+    return res.status(401).json({ message: "You are not authorized" });
   }
 };
